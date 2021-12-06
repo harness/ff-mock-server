@@ -17,8 +17,8 @@ type memoryStore struct {
 }
 
 type fileStruct struct {
-	flag     api.FeatureConfig `json:"flag"`
-	segments []api.Segment     `json:"segments"`
+	Flag     api.FeatureConfig `json:"flag"`
+	Segments []api.Segment     `json:"segments"`
 }
 
 func init() {
@@ -40,7 +40,8 @@ func loadFiles() {
 }
 
 func loadFile(filename string) fileStruct {
-	content, err := ioutil.ReadFile(filepath.Join(source, filename))
+	fp := filepath.Clean(filepath.Join(source, filename))
+	content, err := ioutil.ReadFile(fp)
 	if err != nil {
 		log.Print(err)
 	}

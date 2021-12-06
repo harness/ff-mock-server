@@ -27,7 +27,7 @@ var (
 			Variation: &trueValue,
 		},
 		Environment:          internal.Environment,
-		Feature:              internal.Feature,
+		Feature:              "bool-flag",
 		Kind:                 "boolean",
 		OffVariation:         falseValue,
 		Prerequisites:        nil,
@@ -61,6 +61,8 @@ var (
 	}
 )
 
+// DummyRepository contains mocked configurations, target groups and
+// evaluations
 type DummyRepository struct {
 	featureConfigs map[string]api.FeatureConfig
 	targetGroups   map[string]api.Segment
@@ -69,6 +71,8 @@ type DummyRepository struct {
 
 var _ Repository = DummyRepository{}
 
+// NewDummyRepository returns new DummyRepository with initialized
+// dummy data
 func NewDummyRepository() *DummyRepository {
 	return &DummyRepository{
 		featureConfigs: map[string]api.FeatureConfig{
@@ -83,6 +87,8 @@ func NewDummyRepository() *DummyRepository {
 	}
 }
 
+// GetFlagConfigurations returns all mocked configurations
+// there is no need for env because environment is also mocked
 func (r DummyRepository) GetFlagConfigurations() []api.FeatureConfig {
 	slice := make([]api.FeatureConfig, 0, len(r.featureConfigs))
 	for _, val := range r.featureConfigs {
@@ -91,11 +97,15 @@ func (r DummyRepository) GetFlagConfigurations() []api.FeatureConfig {
 	return slice
 }
 
+// GetFlagConfiguration returns mocked configurations with identifier specified
+// there is no need for env because environment is also mocked
 func (r DummyRepository) GetFlagConfiguration(identifier string) (fc api.FeatureConfig, exists bool) {
 	fc, exists = r.featureConfigs[identifier]
 	return
 }
 
+// GetTargetGroups returns all mocked target groups
+// there is no need for env because environment is also mocked
 func (r DummyRepository) GetTargetGroups() []api.Segment {
 	slice := make([]api.Segment, 0, len(r.targetGroups))
 	for _, val := range r.targetGroups {
@@ -104,11 +114,15 @@ func (r DummyRepository) GetTargetGroups() []api.Segment {
 	return slice
 }
 
+// GetTargetGroup returns mocked target group with identifier specified
+// there is no need for env because environment is also mocked
 func (r DummyRepository) GetTargetGroup(identifier string) (segment api.Segment, exists bool) {
 	segment, exists = r.targetGroups[identifier]
 	return
 }
 
+// GetEvaluations returns all mocked evaluations
+// there is no need for env because environment is also mocked
 func (r DummyRepository) GetEvaluations() api.Evaluations {
 	slice := make([]api.Evaluation, 0, len(r.evaluations))
 	for _, val := range r.evaluations {
@@ -117,6 +131,8 @@ func (r DummyRepository) GetEvaluations() api.Evaluations {
 	return slice
 }
 
+// GetEvaluation returns mocked evaluation with identifier specified
+// there is no need for env because environment is also mocked
 func (r DummyRepository) GetEvaluation(identifier string) (evaluation api.Evaluation, exists bool) {
 	evaluation, exists = r.evaluations[identifier]
 	return

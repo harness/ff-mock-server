@@ -4,6 +4,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+// JWTCustomClaims contains all fields for interacting with the FF backend
 type JWTCustomClaims struct {
 	Environment            string `json:"environment"`
 	EnvironmentIdentifier  string `json:"environmentIdentifier"`

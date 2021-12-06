@@ -56,7 +56,7 @@ check: lint format sec
 
 format: tools # Format go code and error if any changes are made
 	@echo "Formating ..."
-	@goimports -w ./...
+	@goimports -w .
 	@echo "Formatting complete"
 
 lint: tools generate # lint the golang code

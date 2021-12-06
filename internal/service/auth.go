@@ -16,6 +16,7 @@ var (
 	}
 )
 
+// Authenticate with apiKey and return JWT signed token
 func Authenticate(apiKey string) (string, error) {
 	apiKeyType, ok := apiKeyTypes[apiKey]
 	if !ok {

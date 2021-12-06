@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	IdentityServiceKey = "identityservice"
-	APIKey             = "apikey"
+	identityServiceKey = "identityservice"
+	apiKey             = "apikey"
 )
 
 // ValidateEnvironment determines that the environment UUID is present in request, and that
@@ -74,7 +74,7 @@ func JWTValidation(c context.Context, input *openapi3filter.AuthenticationInput)
 		// our gateway service can use an IdentityService token in the authorization header, so if it is present
 		// we want to use it instead of bearer
 		if strings.Contains(token, "IdentityService") {
-			ctx.Set(IdentityServiceKey, true)
+			ctx.Set(identityServiceKey, true)
 		} else {
 			ctx.Set(internal.JWTKey, true)
 		}
@@ -91,7 +91,7 @@ func JWTValidation(c context.Context, input *openapi3filter.AuthenticationInput)
 		if !ok {
 			return echo.ErrUnauthorized
 		}
-		ctx.Set(APIKey, true)
+		ctx.Set(apiKey, true)
 		return nil
 	}
 	return echo.ErrUnauthorized
