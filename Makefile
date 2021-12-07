@@ -52,7 +52,7 @@ build: dep generate ## Build the service binary
 # These lint, format and check the code for potential vulnerabilities
 #########################################
 
-check: lint format sec
+check: generate lint format sec
 
 format: tools # Format go code and error if any changes are made
 	@echo "Formating ..."

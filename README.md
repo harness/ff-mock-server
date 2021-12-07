@@ -8,4 +8,4 @@ You need to specify api key to access all api endpoints
 
 # Default values
 * environmentUUID: 265597ad-516c-4575-a16f-b3d17adffc44
-* flag: demo-flag
+* flag: bool-flag

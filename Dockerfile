@@ -30,7 +30,7 @@ RUN apk update && apk add --no-cache bash curl
 # Import from builder.
 COPY --from=builder /app/wait-for-it.sh /app/wait-for-it.sh
 # Copy our static executable
-COPY --from=builder /app/cmd/ff-mock-server/server /app/server
+COPY --from=builder /app/cmd/server/server /app/server
 # Use an unprivileged user.
 USER nobody:nogroup
 ENTRYPOINT ["/app/server"]
