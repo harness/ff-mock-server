@@ -10,7 +10,9 @@ servers:
   - url: /api/1.0
     description: no host specified
   - url: 'http://localhost:3000/api/1.0'
-    description: CfClient description
+    description: localhost endpoints
+  - url: 'http://localhost:9090/api/1.0'
+    description: docker endpoints
 tags:
   - name: client
   - name: metrics

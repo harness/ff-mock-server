@@ -7,7 +7,7 @@ import (
 
 const (
 	falseValue        = "false"
-	segmentIdentifier = "demo-segment"
+	segmentIdentifier = "demo"
 )
 
 var (
