@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -11,13 +12,21 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+const (
+	// ServerKeyType ...
+	ServerKeyType = "Server"
+	// ClientKeyType ...
+	ClientKeyType = "Client"
+)
+
 var (
 	apiKeyTypes = map[string]string{
-		internal.ServerKey: "Server",
-		internal.ClientKey: "Client",
+		internal.ServerKey: ServerKeyType,
+		internal.ClientKey: ClientKeyType,
 	}
 )
 
+// Authenticate with apiKey and return JWT signed token
 func Authenticate(apiKey string) (string, error) {
 	apiKeyType, ok := apiKeyTypes[apiKey]
 	if !ok {
@@ -44,4 +53,17 @@ func Authenticate(apiKey string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(jwtKey)
+}
+
+// CheckAPIKeyType ...
+func CheckAPIKeyType(expectedTokenType string, token *jwt.Token) error {
+	claims, ok := token.Claims.(*dto.JWTCustomClaims)
+	if !ok {
+		return errors.New("can't decode api key type from request")
+	}
+
+	if claims.KeyType != string(expectedTokenType) {
+		return errors.New("you cannot access resource with this api key type")
+	}
+	return nil
 }

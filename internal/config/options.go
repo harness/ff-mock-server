@@ -1,5 +1,6 @@
 package config
 
+// Options holds cli flags
 var Options struct {
 	Timeout    *int     `short:"t" long:"timeout" description:"Request timeout"`
 	StatusCode *int     `short:"s" long:"status-code" description:"returns HTTP status code"`
