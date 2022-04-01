@@ -269,18 +269,16 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/client/auth", wrapper.Authenticate)
-	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs", wrapper.GetFeatureConfig)
-	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs/:identifier", wrapper.GetFeatureConfigByIdentifier)
-	router.GET(baseURL+"/client/env/:environmentUUID/target-segments", wrapper.GetAllSegments)
-	router.GET(baseURL+"/client/env/:environmentUUID/target-segments/:identifier", wrapper.GetSegmentByIdentifier)
-	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations", wrapper.GetEvaluations)
-	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations/:feature", wrapper.GetEvaluationByIdentifier)
-	router.GET(baseURL+"/stream", wrapper.Stream)
+	router.POST(baseURL+"/client/auth", wrapper.Authenticate).Name = "Authenticate"
+	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs", wrapper.GetFeatureConfig).Name = "GetFeatureConfig"
+	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs/:identifier", wrapper.GetFeatureConfigByIdentifier).Name = "GetFeatureConfigByIdentifier"
+	router.GET(baseURL+"/client/env/:environmentUUID/target-segments", wrapper.GetAllSegments).Name = "GetAllSegments"
+	router.GET(baseURL+"/client/env/:environmentUUID/target-segments/:identifier", wrapper.GetSegmentByIdentifier).Name = "GetSegmentByIdentifier"
+	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations", wrapper.GetEvaluations).Name = "GetEvaluations"
+	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations/:feature", wrapper.GetEvaluationByIdentifier).Name = "GetEvaluationByIdentifier"
+	router.GET(baseURL+"/stream", wrapper.Stream).Name = "Stream"
 
-}
-
-// Base64 encoded, gzipped, json marshaled Swagger object
+} // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
 	"H4sIAAAAAAAC/+xaX3PbuBH/Khi0Tx3KVGLFl+ipjq9J3UwvmdjpPWT8AJNLCRcSYABQjs6j797BH5Ig",

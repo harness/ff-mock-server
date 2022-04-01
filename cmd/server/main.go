@@ -8,6 +8,9 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/drone/ff-mock-server/internal/config"
+	"github.com/jessevdk/go-flags"
+
 	oapimdl "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/drone/ff-mock-server/internal"
 	"github.com/drone/ff-mock-server/internal/dto"
@@ -21,12 +24,19 @@ import (
 )
 
 func main() {
+	_, err := flags.ParseArgs(&config.Options, os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	e := echo.New()
 	e.HideBanner = true
 
+	e.Server.ReadTimeout = 15 * time.Second
+	e.Server.WriteTimeout = 15 * time.Second
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(router.ProcessCLIFlags())
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -50,7 +60,7 @@ func main() {
 			return true
 		},
 		Claims:     &dto.JWTCustomClaims{},
-		SigningKey: []byte(internal.GetAuthSecret()), // SDK_AUTH_TOKEN change on next deploy
+		SigningKey: []byte(config.GetAuthSecret()), // SDK_AUTH_TOKEN change on next deploy
 	}
 
 	clientGroup := e.Group("api/1.0")
@@ -80,6 +90,7 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {

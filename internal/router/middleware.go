@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
+
+	"github.com/drone/ff-mock-server/internal/config"
 
 	oapimdl "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/drone/ff-mock-server/internal"
@@ -95,4 +98,27 @@ func JWTValidation(c context.Context, input *openapi3filter.AuthenticationInput)
 		return nil
 	}
 	return echo.ErrUnauthorized
+}
+
+func ProcessCLIFlags() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// specific routes
+			for _, handler := range config.Options.Handlers {
+				url := c.Echo().Reverse(handler, c.ParamValues())
+				if strings.HasSuffix(c.Path(), url) {
+					if config.Options.Timeout != nil {
+						time.Sleep(time.Duration(*config.Options.Timeout) * time.Second)
+					}
+					if config.Options.StatusCode != nil {
+						return echo.NewHTTPError(*config.Options.StatusCode, config.Options.Message)
+					}
+				}
+			}
+			if len(config.Options.Handlers) == 0 && config.Options.StatusCode != nil {
+				return echo.NewHTTPError(*config.Options.StatusCode, config.Options.Message)
+			}
+			return next(c)
+		}
+	}
 }
