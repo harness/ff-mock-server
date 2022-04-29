@@ -33,6 +33,7 @@ type Handler struct {
 	repo               repository.Repository
 	targetDataReceived bool
 	sseSeq             uint32
+	sseTimeout         uint32
 }
 
 // NewHandler returns new Handler struct with Repository and EventSource initialized
@@ -162,8 +163,11 @@ func (h *Handler) GetEvaluationByIdentifier(ctx echo.Context, environmentUUID st
 	return ctx.JSON(http.StatusOK, evaluation)
 }
 
-// Stream is used to notify SDK instances using SSE
+// Stream is used to notify SDK instances using SSEOffSequence
 func (h *Handler) Stream(ctx echo.Context, params api.StreamParams) error {
+	if timeout := atomic.LoadUint32(&h.sseSeq); timeout == 0 {
+		return echo.NewHTTPError(500, "sse is in offline state")
+	}
 	log.Infof("connecting key %s on stream", params.APIKey)
 	req := ctx.Request()
 	req.URL.RawQuery = "stream=" + params.APIKey
@@ -171,15 +175,24 @@ func (h *Handler) Stream(ctx echo.Context, params api.StreamParams) error {
 		h.eventSource.CreateStream(params.APIKey)
 	}
 	seq := atomic.LoadUint32(&h.sseSeq)
-	timer := time.Tick(time.Duration(config.Options.SSE[seq]) * time.Second)
+	timer := time.Tick(time.Duration(config.Options.SSEOffSequence[seq]) * time.Second)
 	go func() {
 		<-timer
 		h.eventSource.Close()
 	}()
+	// blocking operation
 	h.eventSource.ServeHTTP(ctx.Response().Writer, req)
+
 	atomic.StoreUint32(&h.sseSeq, 0)
-	if int(seq) < len(config.Options.SSE)-1 {
+	if int(seq) < len(config.Options.SSEOffSequence)-1 {
 		atomic.StoreUint32(&h.sseSeq, seq+1)
+	}
+
+	if config.Options.SSEOffDuration != nil {
+		timeout := uint32(*config.Options.SSEOffDuration)
+		atomic.StoreUint32(&h.sseTimeout, 1)
+		time.Sleep(time.Duration(timeout) * time.Second)
+		atomic.StoreUint32(&h.sseTimeout, 0)
 	}
 	return nil
 }
