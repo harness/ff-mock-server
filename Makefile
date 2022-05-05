@@ -8,7 +8,7 @@ ifndef DOCKER_BUILD_OPTS
 	DOCKER_BUILD_OPTS := --build
 endif
 
-tools = $(addprefix $(GOBIN)/, golangci-lint gosec goimports)
+tools = $(addprefix $(GOBIN)/, golint golangci-lint gosec goimports)
 deps = $(addprefix $(GOBIN)/, oapi-codegen)
 
 .DEFAULT_GOAL := all
