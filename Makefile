@@ -76,6 +76,10 @@ sec: tools # Run the security checks
 # If the tool already exists it wont be re-installed.
 ###########################################
 
+$(GOPATH)/bin/golint:
+	@echo "🔘 Installing golint ... (`date '+%H:%M:%S'`)"
+	@GO111MODULE=off go get -u golang.org/x/lint/golint
+
 # Install golangci-lint
 $(GOBIN)/golangci-lint:
 	@echo "🔘 Installing golangci-lint... (`date '+%H:%M:%S'`)"
