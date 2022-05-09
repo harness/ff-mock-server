@@ -44,7 +44,7 @@ Application Options:
 -s, --status-code= returns HTTP status code
 -m, --message=     Message to display in response
 -e, --sse=         SSE off sequence, -e=10 -e=30 -e=60 means it will go off in 10s, 30s and 60s
--o, --operation=   operation
+-o, --operation=   operation (Authenticate, GetFeatureConfig, GetFeatureConfigByIdentifier, GetAllSegments, GetSegmentByIdentifier, GetEvaluations, GetEvaluationByIdentifier, postMetrics, Stream)
 
 Help Options:
 -h, --help         Show this help message
