@@ -8,7 +8,7 @@ ifndef DOCKER_BUILD_OPTS
 	DOCKER_BUILD_OPTS := --build
 endif
 
-tools = $(addprefix $(GOBIN)/, golangci-lint gosec goimports)
+tools = $(addprefix $(GOBIN)/, golint golangci-lint gosec goimports)
 deps = $(addprefix $(GOBIN)/, oapi-codegen)
 
 .DEFAULT_GOAL := all
@@ -75,6 +75,10 @@ sec: tools # Run the security checks
 # These targets specify the full path to where the tool is installed
 # If the tool already exists it wont be re-installed.
 ###########################################
+
+$(GOPATH)/bin/golint:
+	@echo "🔘 Installing golint ... (`date '+%H:%M:%S'`)"
+	@GO111MODULE=off go get -u golang.org/x/lint/golint
 
 # Install golangci-lint
 $(GOBIN)/golangci-lint:

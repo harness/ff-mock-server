@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/drone/ff-mock-server/internal/config"
+
 	"github.com/drone/ff-mock-server/internal"
 	"github.com/drone/ff-mock-server/internal/dto"
 	"github.com/golang-jwt/jwt"
@@ -35,7 +37,7 @@ func Authenticate(apiKey string) (string, error) {
 	if len(clusterIdentifier) == 0 {
 		clusterIdentifier = internal.DefaultClusterIdentifier
 	}
-	var jwtKey = []byte(internal.GetAuthSecret())
+	var jwtKey = []byte(config.GetAuthSecret())
 	claims := &dto.JWTCustomClaims{
 		ClusterIdentifier:      clusterIdentifier,
 		Account:                "Harness account",

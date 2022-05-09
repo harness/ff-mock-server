@@ -3,12 +3,16 @@ package router
 import (
 	"errors"
 	"net/http"
+	"sync/atomic"
+	"time"
 
+	"github.com/drone/ff-mock-server/internal/config"
 	"github.com/drone/ff-mock-server/internal/repository"
 	"github.com/drone/ff-mock-server/internal/service"
 	"github.com/drone/ff-mock-server/pkg/api"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/r3labs/sse/v2"
 )
 
@@ -20,6 +24,7 @@ type EventSource interface {
 	CreateStream(id string) *sse.Stream
 	StreamExists(id string) bool
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	Close()
 }
 
 // Handler struct for implementing api methods
@@ -27,6 +32,8 @@ type Handler struct {
 	eventSource        EventSource
 	repo               repository.Repository
 	targetDataReceived bool
+	sseSeq             uint32
+	sseTimeout         uint32
 }
 
 // NewHandler returns new Handler struct with Repository and EventSource initialized
@@ -40,7 +47,7 @@ func NewHandler(repo repository.Repository, eventSource EventSource) *Handler {
 
 // Authenticate just check the mocked key and type of key
 // and returns JWT token
-func (h Handler) Authenticate(ctx echo.Context) error {
+func (h *Handler) Authenticate(ctx echo.Context) error {
 	authenticationRequest := api.AuthenticationRequest{}
 	err := ctx.Bind(&authenticationRequest)
 	if err != nil {
@@ -61,7 +68,7 @@ func (h Handler) Authenticate(ctx echo.Context) error {
 
 // GetFeatureConfig serve configuration array as JSON response
 // environmentUUID not used because we are serving mocks for single environment
-func (h Handler) GetFeatureConfig(ctx echo.Context, environmentUUID string) error {
+func (h *Handler) GetFeatureConfig(ctx echo.Context, environmentUUID string) error {
 	token, ok := ctx.Get("user").(*jwt.Token)
 	if !ok {
 		return ErrAuthTokenNilOrInvalid
@@ -74,7 +81,7 @@ func (h Handler) GetFeatureConfig(ctx echo.Context, environmentUUID string) erro
 
 // GetFeatureConfigByIdentifier serve configuration specified with identifier
 // environmentUUID not used because we are serving mocks for single environment
-func (h Handler) GetFeatureConfigByIdentifier(ctx echo.Context, environmentUUID string, identifier string) error {
+func (h *Handler) GetFeatureConfigByIdentifier(ctx echo.Context, environmentUUID string, identifier string) error {
 	token, ok := ctx.Get("user").(*jwt.Token)
 	if !ok {
 		return ErrAuthTokenNilOrInvalid
@@ -94,7 +101,7 @@ func (h Handler) GetFeatureConfigByIdentifier(ctx echo.Context, environmentUUID 
 
 // GetAllSegments serve mocked target groups as JSON response
 // environmentUUID not used because we are serving mocks for single environment
-func (h Handler) GetAllSegments(ctx echo.Context, environmentUUID string) error {
+func (h *Handler) GetAllSegments(ctx echo.Context, environmentUUID string) error {
 	token, ok := ctx.Get("user").(*jwt.Token)
 	if !ok {
 		return ErrAuthTokenNilOrInvalid
@@ -107,7 +114,7 @@ func (h Handler) GetAllSegments(ctx echo.Context, environmentUUID string) error 
 
 // GetSegmentByIdentifier serve mocked target group specified by identifier as JSON response
 // environmentUUID not used because we are serving mocks for single environment
-func (h Handler) GetSegmentByIdentifier(ctx echo.Context, environmentUUID string, identifier string) error {
+func (h *Handler) GetSegmentByIdentifier(ctx echo.Context, environmentUUID string, identifier string) error {
 	token, ok := ctx.Get("user").(*jwt.Token)
 	if !ok {
 		return ErrAuthTokenNilOrInvalid
@@ -126,7 +133,7 @@ func (h Handler) GetSegmentByIdentifier(ctx echo.Context, environmentUUID string
 
 // GetEvaluations serve evaluations as JSON response
 // target and environmentUUID not used because we are serving mocks for single environment
-func (h Handler) GetEvaluations(ctx echo.Context, environmentUUID string, target string) error {
+func (h *Handler) GetEvaluations(ctx echo.Context, environmentUUID string, target string) error {
 	token, ok := ctx.Get("user").(*jwt.Token)
 	if !ok {
 		return ErrAuthTokenNilOrInvalid
@@ -139,7 +146,7 @@ func (h Handler) GetEvaluations(ctx echo.Context, environmentUUID string, target
 
 // GetEvaluationByIdentifier serve evaluation as JSON response with specified feature
 // target and environmentUUID not used because we are serving mocks for single environment
-func (h Handler) GetEvaluationByIdentifier(ctx echo.Context, environmentUUID string, target string, feature string) error {
+func (h *Handler) GetEvaluationByIdentifier(ctx echo.Context, environmentUUID string, target string, feature string) error {
 	token, ok := ctx.Get("user").(*jwt.Token)
 	if !ok {
 		return ErrAuthTokenNilOrInvalid
@@ -156,14 +163,37 @@ func (h Handler) GetEvaluationByIdentifier(ctx echo.Context, environmentUUID str
 	return ctx.JSON(http.StatusOK, evaluation)
 }
 
-// Stream is used to notify SDK instances using SSE
-func (h Handler) Stream(ctx echo.Context, params api.StreamParams) error {
+// Stream is used to notify SDK instances using SSEOffSequence
+func (h *Handler) Stream(ctx echo.Context, params api.StreamParams) error {
+	if timeout := atomic.LoadUint32(&h.sseSeq); timeout == 0 {
+		return echo.NewHTTPError(500, "sse is in offline state")
+	}
+	log.Infof("connecting key %s on stream", params.APIKey)
 	req := ctx.Request()
 	req.URL.RawQuery = "stream=" + params.APIKey
 	if !h.eventSource.StreamExists(params.APIKey) {
 		h.eventSource.CreateStream(params.APIKey)
 	}
+	seq := atomic.LoadUint32(&h.sseSeq)
+	timer := time.Tick(time.Duration(config.Options.SSEOffSequence[seq]) * time.Second)
+	go func() {
+		<-timer
+		h.eventSource.Close()
+	}()
+	// blocking operation
 	h.eventSource.ServeHTTP(ctx.Response().Writer, req)
+
+	atomic.StoreUint32(&h.sseSeq, 0)
+	if int(seq) < len(config.Options.SSEOffSequence)-1 {
+		atomic.StoreUint32(&h.sseSeq, seq+1)
+	}
+
+	if config.Options.SSEOffDuration != nil {
+		timeout := uint32(*config.Options.SSEOffDuration)
+		atomic.StoreUint32(&h.sseTimeout, 1)
+		time.Sleep(time.Duration(timeout) * time.Second)
+		atomic.StoreUint32(&h.sseTimeout, 0)
+	}
 	return nil
 }
 
