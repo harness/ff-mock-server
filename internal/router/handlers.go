@@ -165,7 +165,7 @@ func (h *Handler) GetEvaluationByIdentifier(ctx echo.Context, environmentUUID st
 
 // Stream is used to notify SDK instances using SSEOffSequence
 func (h *Handler) Stream(ctx echo.Context, params api.StreamParams) error {
-	if timeout := atomic.LoadUint32(&h.sseSeq); timeout == 0 {
+	if timeout := atomic.LoadUint32(&h.sseSeq); timeout == 0 && config.Options.SSEOffDuration != nil {
 		return echo.NewHTTPError(500, "sse is in offline state")
 	}
 	log.Infof("connecting key %s on stream", params.APIKey)
@@ -175,17 +175,21 @@ func (h *Handler) Stream(ctx echo.Context, params api.StreamParams) error {
 		h.eventSource.CreateStream(params.APIKey)
 	}
 	seq := atomic.LoadUint32(&h.sseSeq)
-	timer := time.Tick(time.Duration(config.Options.SSEOffSequence[seq]) * time.Second)
-	go func() {
-		<-timer
-		h.eventSource.Close()
-	}()
+	if len(config.Options.SSEOffSequence) > 0 {
+		timer := time.Tick(time.Duration(config.Options.SSEOffSequence[seq]) * time.Second)
+		go func() {
+			<-timer
+			h.eventSource.Close()
+		}()
+	}
 	// blocking operation
 	h.eventSource.ServeHTTP(ctx.Response().Writer, req)
 
-	atomic.StoreUint32(&h.sseSeq, 0)
-	if int(seq) < len(config.Options.SSEOffSequence)-1 {
-		atomic.StoreUint32(&h.sseSeq, seq+1)
+	if len(config.Options.SSEOffSequence) > 0 {
+		atomic.StoreUint32(&h.sseSeq, 0)
+		if int(seq) < len(config.Options.SSEOffSequence)-1 {
+			atomic.StoreUint32(&h.sseSeq, seq+1)
+		}
 	}
 
 	if config.Options.SSEOffDuration != nil {
