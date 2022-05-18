@@ -106,8 +106,13 @@ func ProcessCLIFlags() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			// specific routes
 			for _, handler := range config.Options.Handlers {
-				url := c.Echo().Reverse(handler, c.ParamValues())
-				if strings.HasSuffix(c.Path(), url) {
+				params := make([]interface{}, len(c.ParamValues()))
+				for i, val := range c.ParamValues() {
+					params[i] = val
+				}
+				url := strings.TrimLeft(c.Echo().Reverse(handler, params...), "/")
+				requestedUrl := strings.TrimLeft(c.Request().URL.Path, "/")
+				if requestedUrl == url {
 					if config.Options.Timeout != nil {
 						time.Sleep(time.Duration(*config.Options.Timeout) * time.Second)
 					}
