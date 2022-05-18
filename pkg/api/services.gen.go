@@ -290,19 +290,17 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/client/auth", wrapper.Authenticate)
-	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs", wrapper.GetFeatureConfig)
-	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs/:identifier", wrapper.GetFeatureConfigByIdentifier)
-	router.GET(baseURL+"/client/env/:environmentUUID/target-segments", wrapper.GetAllSegments)
-	router.GET(baseURL+"/client/env/:environmentUUID/target-segments/:identifier", wrapper.GetSegmentByIdentifier)
-	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations", wrapper.GetEvaluations)
-	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations/:feature", wrapper.GetEvaluationByIdentifier)
-	router.POST(baseURL+"/metrics/:environment", wrapper.PostMetrics)
-	router.GET(baseURL+"/stream", wrapper.Stream)
+	router.POST(baseURL+"/client/auth", wrapper.Authenticate).Name = "Authenticate"
+	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs", wrapper.GetFeatureConfig).Name = "GetFeatureConfig"
+	router.GET(baseURL+"/client/env/:environmentUUID/feature-configs/:identifier", wrapper.GetFeatureConfigByIdentifier).Name = "GetFeatureConfigByIdentifier"
+	router.GET(baseURL+"/client/env/:environmentUUID/target-segments", wrapper.GetAllSegments).Name = "GetAllSegments"
+	router.GET(baseURL+"/client/env/:environmentUUID/target-segments/:identifier", wrapper.GetSegmentByIdentifier).Name = "GetSegmentByIdentifier"
+	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations", wrapper.GetEvaluations).Name = "GetEvaluations"
+	router.GET(baseURL+"/client/env/:environmentUUID/target/:target/evaluations/:feature", wrapper.GetEvaluationByIdentifier).Name = "GetEvaluationByIdentifier"
+	router.POST(baseURL+"/metrics/:environment", wrapper.PostMetrics).Name = "PostMetrics"
+	router.GET(baseURL+"/stream", wrapper.Stream).Name = "Stream"
 
-}
-
-// Base64 encoded, gzipped, json marshaled Swagger object
+} // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
 	"H4sIAAAAAAAC/+xb3XPbNhL/VzC8e7qhTLlW3ERP5zh1zpdJ44mV9iHjB5hcSqhJgAFAOapH//sNvvgJ",
